@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Cricket Live Scoreboard</title>
+<style>
+:root{--bg:#071326;--panel:#102542;--accent:#ffd447;--text:#fff;--muted:#b9c9dc}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(140deg,#06101f,#102b4c);color:var(--text);font-family:Arial,sans-serif;padding:14px}
+.wrap{max-width:900px;margin:auto}
+.top{text-align:center;font-weight:800;letter-spacing:2px;color:var(--accent);font-size:14px;margin:5px 0 12px}
+.match{display:flex;justify-content:space-between;align-items:center;background:var(--panel);padding:16px;border-radius:16px}
+.team{font-size:22px;font-weight:800}
+.score{text-align:center;font-size:42px;font-weight:900;color:var(--accent)}
+.overs{text-align:center;color:var(--muted);font-size:15px;margin-top:3px}
+.status{text-align:center;padding:10px;color:#dce8f5;font-weight:700}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.card{background:var(--panel);border-radius:14px;padding:13px}
+h3{margin:0 0 10px;color:var(--accent);font-size:15px}
+.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #29405d;font-size:14px}
+.row:last-child{border:0}
+.controls{background:#0d2038;border-radius:14px;padding:12px;margin-top:12px}
+.controls label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}
+input{width:100%;padding:10px;border:1px solid #395575;border-radius:8px;background:#071326;color:white;font-size:15px}
+.buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+button{border:0;border-radius:9px;padding:13px 5px;font-size:17px;font-weight:800;background:#e7f0fa;color:#071326}
+button.wicket{background:#ef6262;color:#fff}
+button.undo{background:#51657c;color:#fff}
+.small{font-size:12px;color:var(--muted);text-align:center;margin-top:10px}
+@media(max-width:520px){.team{font-size:17px}.score{font-size:34px}.grid{gap:8px}.card{padding:10px}}
+</style>
+</head>
+<body><div class="wrap">
+<div class="top">LIVE CRICKET • SCOREBOARD</div>
+<div class="match">
+ <div class="team" id="teamA">IND</div>
+ <div><div class="score"><span id="runs">0</span>/<span id="wkts">0</span></div><div class="overs"><span id="overs">0.0</span> OVERS</div></div>
+ <div class="team" id="teamB">NEP</div>
+</div>
+<div class="status" id="status">1st INNINGS • LIVE SCORE</div>
+<div class="grid">
+ <div class="card"><h3>BATTERS</h3>
+  <div class="row"><span id="bat1">Batter 1*</span><b><span id="b1r">0</span> (<span id="b1b">0</span>)</b></div>
+  <div class="row"><span id="bat2">Batter 2</span><b><span id="b2r">0</span> (<span id="b2b">0</span>)</b></div>
+ </div>
+ <div class="card"><h3>BOWLER</h3>
+  <div class="row"><span id="bowler">Bowler</span><b id="bowlfig">0-0 (0.0)</b></div>
+  <div class="row"><span>THIS OVER</span><b id="thisover">—</b></div>
+ </div>
+</div>
+<div class="controls">
+ <h3>EDIT MATCH / UPDATE SCORE</h3>
+ <label>Team names (e.g. IND / NEP)</label><div class="grid"><input id="editA" value="IND"><input id="editB" value="NEP"></div>
+ <label>Batter 1 / Batter 2 / Bowler</label>
+ <input id="editBat1" placeholder="Batter 1 name"><input id="editBat2" placeholder="Batter 2 name"><input id="editBowler" placeholder="Bowler name">
+ <div class="buttons">
+  <button onclick="add(0)">0</button><button onclick="add(1)">1</button><button onclick="add(2)">2</button><button onclick="add(3)">3</button>
+  <button onclick="add(4)">4</button><button onclick="add(6)">6</button><button class="wicket" onclick="wicket()">WICKET</button><button class="undo" onclick="undo()">UNDO</button>
+ </div>
+ <div class="small">Tap UPDATE NAMES to apply names. Use UNDO to reverse the last ball.</div>
+ <button style="width:100%;margin-top:8px;background:var(--accent)" onclick="names()">UPDATE NAMES</button>
+</div>
+<div class="small">Demo/manual scoreboard only. Enter score updates yourself. No official live data feed.</div>
+</div>
+<script>
+let s={r:0,w:0,balls:0,b1r:0,b1b:0,b2r:0,b2b:0,strike:1,br:0,bb:0,ww:0,over:[]},hist=[];
+function render(){
+ document.getElementById('runs').textContent=s.r;document.getElementById('wkts').textContent=s.w;
+ document.getElementById('overs').textContent=Math.floor(s.balls/6)+'.'+s.balls%6;
+ ['b1r','b1b','b2r','b2b'].forEach(k=>document.getElementById(k).textContent=s[k]);
+ document.getElementById('bat1').textContent=(document.getElementById('editBat1').value||'Batter 1')+(s.strike===1?'*':'');
+ document.getElementById('bat2').textContent=(document.getElementById('editBat2').value||'Batter 2')+(s.strike===2?'*':'');
+ document.getElementById('bowler').textContent=document.getElementById('editBowler').value||'Bowler';
+ document.getElementById('bowlfig').textContent=s.br+'-'+s.ww+' ('+Math.floor(s.bb/6)+'.'+s.bb%6+')';
+ document.getElementById('thisover').textContent=s.over.join(' ')||'—';
+ document.getElementById('teamA').textContent=document.getElementById('editA').value||'IND';
+ document.getElementById('teamB').textContent=document.getElementById('editB').value||'NEP';
+}
+function save(){hist.push(JSON.stringify(s));if(hist.length>30)hist.shift()}
+function add(n){save();s.r+=n;s.br+=n;let k=s.strike===1?'1':'2';s['b'+k+'r']+=n;s['b'+k+'b']++;s.bb++;s.balls++;s.over.push(String(n));if(n%2)s.strike=s.strike===1?2:1;if(s.balls%6===0)s.strike=s.strike===1?2:1;render()}
+function wicket(){save();s.w++;s.ww++;s.bb++;s.balls++;s.over.push('W');if(s.strike===1){s.b1r=0;s.b1b=0}else{s.b2r=0;s.b2b=0}if(s.balls%6===0)s.strike=s.strike===1?2:1;render()}
+function undo(){if(hist.length){s=JSON.parse(hist.pop());render()}}
+function names(){render()}
+render();
+</script></body></html>
